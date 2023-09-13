@@ -1,6 +1,14 @@
+import concurrent.futures
+import hashlib
 import os
 
+from PIL import Image
+
+from library.utils import calculate_aspect_ratio
+
 IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.webp', '.bmp')
+
+executor = concurrent.futures.ProcessPoolExecutor(4)
 
 
 class DatasetEntry:
@@ -8,15 +16,21 @@ class DatasetEntry:
     Entry in the dataset. Includes the training image and any caption data/tags located
     alongside.
     """
+    name: str
     filename: str
+    hash: str
+    width: int
+    height: int
+    aspect_ratio: str
     image_dir: str
     image_path: str
     caption_path: str
     original_tags: list[str]
     tags: list[str]
 
-    def __init__(self, ) -> None:
+    def __init__(self, name: str) -> None:
         super().__init__()
+        self.name = name
         self.original_tags = list()
         self.tags = list()
 
@@ -34,6 +48,15 @@ class DatasetEntry:
         self.image_path = image_path
         self.caption_path = os.path.join(self.image_dir, self.filename) + caption_ext
 
+        if os.path.exists(self.image_path):
+            with open(self.image_path, "rb") as f:
+                self.hash = hashlib.sha256(f.read()).hexdigest()
+            with Image.open(image_path) as img:
+                self.width, self.height = img.size
+
+            x, y = calculate_aspect_ratio(self.width, self.height)
+            self.aspect_ratio = f"{x}:{y}"
+
         if os.path.exists(self.caption_path):
             with open(self.caption_path, 'r', encoding='utf8') as f:
                 caption = f.read()
@@ -41,6 +64,18 @@ class DatasetEntry:
                     tag = tag.strip().lower()
                     self.original_tags.append(tag)
                     self.tags.append(tag)
+
+    def delete_tag(self, tag: str) -> None:
+        """
+        Delete the given tag from this entry's captions.
+        Args:
+            tag: The tag to delete
+        """
+        try:
+            self.tags.remove(tag)
+        except ValueError:
+            # no-op. Tag doesn't exist, nothing to do
+            pass
 
 
 class Dataset:
@@ -50,10 +85,12 @@ class Dataset:
     dataset_dir: str | None
     caption_ext: str | None
     entries: dict[str, DatasetEntry]
+    tags: set[str]
     size: int = 0
 
     def __init__(self) -> None:
         super().__init__()
+        self._on_change_listeners = set()
         self.clear()
 
     def load(self, dataset_dir: str, caption_ext: str) -> None:
@@ -65,18 +102,32 @@ class Dataset:
             raise ValueError('Please provide an extension for the caption files.')
         self.caption_ext = caption_ext
 
-        for file in os.listdir(dataset_dir):
-            if file.lower().endswith(IMAGE_EXTENSIONS):
-                self._load_entry(os.path.join(dataset_dir, file))
+        for root, dirs, files in os.walk(dataset_dir):
+            for file in files:
+                if file.lower().endswith(IMAGE_EXTENSIONS):
+                    entry = self._load_entry(os.path.join(root, file))
+                    self.entries[entry.name] = entry
+        self.size = len(self.entries)
 
     def clear(self) -> None:
+        self.tags = set()
         self.dataset_dir = None
         self.caption_ext = None
         self.entries = dict()
         self.size = 0
 
-    def _load_entry(self, image_path: str) -> None:
-        entry = DatasetEntry()
+    def _load_entry(self, image_path: str) -> DatasetEntry:
+        name = os.path.relpath(image_path, self.dataset_dir)
+        entry = DatasetEntry(name)
         entry.load(image_path, self.caption_ext)
-        self.entries[image_path] = entry
-        self.size += 1
+        self.tags.update(entry.tags)
+        return entry
+
+    def delete_tag(self, tag: str) -> None:
+        """
+        Remove a tag from the dataset, purging it from all entries in the set.
+        Args:
+            tag: The tag to remove
+        """
+        for entry in self.entries.values():
+            entry.delete_tag(tag)

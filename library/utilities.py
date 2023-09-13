@@ -7,9 +7,9 @@ import gradio as gr
 import os
 import argparse
 from library.basic_caption_gui import gradio_basic_caption_gui_tab
-from library.bulk_caption_gui import gradio_bulk_caption_gui_tab
 from library.convert_model_gui import gradio_convert_model_tab
 from library.blip_caption_gui import gradio_blip_caption_gui_tab
+from library.dataset_editor_gui import gradio_dataset_editor_gui_tab
 from library.git_caption_gui import gradio_git_caption_gui_tab
 from library.wd14_caption_gui import gradio_wd14_caption_gui_tab
 from library.manual_caption_gui import gradio_manual_caption_gui_tab
@@ -17,13 +17,13 @@ from library.group_images_gui import gradio_group_images_gui_tab
 
 
 def utilities_tab(
-    train_data_dir_input=gr.Textbox(),
-    reg_data_dir_input=gr.Textbox(),
-    output_dir_input=gr.Textbox(),
-    logging_dir_input=gr.Textbox(),
-    enable_copy_info_button=bool(False),
-    enable_dreambooth_tab=True,
-    headless=False
+        train_data_dir_input=gr.Textbox(),
+        reg_data_dir_input=gr.Textbox(),
+        output_dir_input=gr.Textbox(),
+        logging_dir_input=gr.Textbox(),
+        enable_copy_info_button=bool(False),
+        enable_dreambooth_tab=True,
+        headless=False
 ):
     with gr.Tab('Captioning'):
         gradio_basic_caption_gui_tab(headless=headless)
@@ -31,9 +31,9 @@ def utilities_tab(
         gradio_git_caption_gui_tab(headless=headless)
         gradio_wd14_caption_gui_tab(headless=headless)
         gradio_manual_caption_gui_tab(headless=headless)
-        gradio_bulk_caption_gui_tab(headless=headless)
     gradio_convert_model_tab(headless=headless)
     gradio_group_images_gui_tab(headless=headless)
+    gradio_dataset_editor_gui_tab(headless=headless)
 
     return (
         train_data_dir_input,
