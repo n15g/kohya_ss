@@ -62,6 +62,10 @@ def gradio_dataset_editor_gui_tab(headless=False):
         outputs=[dataset_timestamp, results_row]
     )
 
+    save_button.click(
+        fn=save
+    )
+
 
 def load(dataset_dir, caption_ext):
     dataset.clear()
@@ -75,3 +79,7 @@ def load(dataset_dir, caption_ext):
         str(time.time()),
         gr.Row.update(visible=True)
     ]
+
+
+def save():
+    dataset.save()

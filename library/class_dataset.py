@@ -119,23 +119,20 @@ class Dataset:
         self.size = len(self.entries)
         self._update_tags()
 
+    def save(self):
+        """
+        Save changes to the dataset to the filesystem.
+        """
+        for entry in self.entries.values():
+            with open(entry.caption_path, 'w') as caption_file:
+                caption_file.write(', '.join(entry.tags))
+
     def clear(self) -> None:
         self.tags = set()
         self.dataset_dir = None
         self.caption_ext = None
         self.entries = dict()
         self.size = 0
-
-    def _load_entry(self, image_path: str) -> DatasetEntry:
-        name = os.path.relpath(image_path, self.dataset_dir)
-        entry = DatasetEntry(name)
-        entry.load(image_path, self.caption_ext)
-        return entry
-
-    def _update_tags(self):
-        self.tags = set()
-        for entry in self.entries.values():
-            self.tags.update(entry.tags)
 
     def delete_tag(self, tag: str) -> None:
         """
@@ -157,3 +154,14 @@ class Dataset:
         for entry in self.entries.values():
             entry.rename_tag(old, new)
         self._update_tags()
+
+    def _load_entry(self, image_path: str) -> DatasetEntry:
+        name = os.path.relpath(image_path, self.dataset_dir)
+        entry = DatasetEntry(name)
+        entry.load(image_path, self.caption_ext)
+        return entry
+
+    def _update_tags(self):
+        self.tags = set()
+        for entry in self.entries.values():
+            self.tags.update(entry.tags)
