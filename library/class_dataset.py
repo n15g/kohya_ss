@@ -77,6 +77,15 @@ class DatasetEntry:
             # no-op. Tag doesn't exist, nothing to do
             pass
 
+    def rename_tag(self, old, new):
+        """
+        Rename a tag in this entry's captions.
+        Args:
+            old: Old value
+            new: New value
+        """
+        self.tags = list(map(lambda e: e.replace(old, new), self.tags))
+
 
 class Dataset:
     """
@@ -108,6 +117,7 @@ class Dataset:
                     entry = self._load_entry(os.path.join(root, file))
                     self.entries[entry.name] = entry
         self.size = len(self.entries)
+        self._update_tags()
 
     def clear(self) -> None:
         self.tags = set()
@@ -120,8 +130,12 @@ class Dataset:
         name = os.path.relpath(image_path, self.dataset_dir)
         entry = DatasetEntry(name)
         entry.load(image_path, self.caption_ext)
-        self.tags.update(entry.tags)
         return entry
+
+    def _update_tags(self):
+        self.tags = set()
+        for entry in self.entries.values():
+            self.tags.update(entry.tags)
 
     def delete_tag(self, tag: str) -> None:
         """
@@ -131,3 +145,15 @@ class Dataset:
         """
         for entry in self.entries.values():
             entry.delete_tag(tag)
+        self._update_tags()
+
+    def rename_tag(self, old: str, new: str) -> None:
+        """
+        Rename a tag across the whole dataset.
+        Args:
+            old: Old value
+            new: New value
+        """
+        for entry in self.entries.values():
+            entry.rename_tag(old, new)
+        self._update_tags()

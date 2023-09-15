@@ -1,3 +1,5 @@
+import time
+
 import gradio as gr
 
 from library.class_dataset import Dataset
@@ -20,7 +22,11 @@ class DatasetEditorTagsWidget:
 
         with gr.Row():
             self.selected_tag = gr.Text(visible=False)
-            self.tag_distribution_graph = gr.Label(label='Tag Distribution')
+            self.tag_distribution_graph = gr.Label(
+                label='Tag Distribution',
+                scale=2,
+                elem_classes=["de_panel", "de_tags_distribution"]
+            )
 
             self.selected_tag_widget = DatasetEditorSelectedTagWidget(
                 self.dataset,
@@ -53,9 +59,10 @@ class DatasetEditorSelectedTagWidget:
     dataset_timestamp: gr.Text
     selected_tag: gr.Text
 
-    block: gr.Column
     heading_label: gr.Markdown
     delete_tag_button: gr.Button
+    rename_tag_text: gr.Text
+    rename_tag_button: gr.Button
 
     def __init__(
             self,
@@ -68,9 +75,13 @@ class DatasetEditorSelectedTagWidget:
         self.dataset_timestamp = dataset_timestamp
         self.selected_tag = selected_tag
 
-        with gr.Column(visible=False) as self.block:
-            self.heading_label = gr.Markdown()
-            self.delete_tag_button = gr.Button('Delete Tag 💣')
+        with gr.Column():
+            with gr.Row():
+                self.heading_label = gr.Markdown()
+                self.delete_tag_button = gr.Button('Delete 💣', scale=0)
+            with gr.Row(equal_height=True):
+                self.rename_tag_text = gr.Text(label='Rename Tag', show_copy_button=True)
+                self.rename_tag_button = gr.Button('✏️', scale=0)
 
         self.dataset_timestamp.change(
             fn=self._on_dataset_change,
@@ -81,24 +92,57 @@ class DatasetEditorSelectedTagWidget:
         self.selected_tag.change(
             fn=self._on_selected_tag_change,
             inputs=selected_tag,
-            outputs=[self.block, self.heading_label]
+            outputs=[
+                self.heading_label,
+                self.delete_tag_button,
+                self.rename_tag_text,
+                self.rename_tag_button
+            ]
         )
 
         self.delete_tag_button.click(
-            self._on_delete_tag,
-            self.selected_tag
+            fn=self._on_delete_tag,
+            inputs=self.selected_tag,
+            outputs=[self.selected_tag, self.dataset_timestamp]
         )
 
-    def _on_dataset_change(self, selected_tag: str) -> gr.Text.update:
-        if selected_tag is None or selected_tag not in self.dataset.tags:
+        self.rename_tag_button.click(
+            fn=self._on_rename_tag,
+            inputs=[
+                self.selected_tag,
+                self.rename_tag_text
+            ],
+            outputs=[
+                self.selected_tag,
+                self.dataset_timestamp
+            ]
+        )
+
+    def _on_dataset_change(self, selected_tag: str):
+        if selected_tag not in self.dataset.tags:
             return None
         return selected_tag
 
-    def _on_selected_tag_change(self, selected_tag: str) -> [gr.Blocks.update, gr.Markdown.update]:
+    def _on_selected_tag_change(self, selected_tag: str):
+        interactive = selected_tag is not None
+        title = f"# {selected_tag}" if selected_tag is not None else "# Select a tag"
         return [
-            gr.Column.update(visible=selected_tag is not None),
-            gr.Markdown.update(value=f"# Edit tag [{selected_tag}]")
+            gr.Markdown.update(value=title),  # heading_label
+            gr.Button.update(interactive=interactive),  # delete_button
+            gr.Text.update(value=selected_tag, interactive=interactive),  # rename_text
+            gr.Button.update(interactive=interactive),  # rename_button
         ]
 
-    def _on_delete_tag(self, tag):
+    def _on_delete_tag(self, tag: str):
         self.dataset.delete_tag(tag)
+        return [
+            None,  # selected_tag
+            str(time.time())  # dataset_timestamp,
+        ]
+
+    def _on_rename_tag(self, old: str, new: str):
+        self.dataset.rename_tag(old, new)
+        return [
+            new,  # selected_tag
+            str(time.time()),  # dataset_timestamp
+        ]

@@ -24,11 +24,11 @@ class DatasetEditorImagesWidget:
         with gr.Row():
             self.size_distribution_graph = gr.Label(
                 label='Size Distribution',
-                elem_classes='analysis_panel'
+                elem_classes='de_panel'
             )
             self.aspect_ratio_distribution_graph = gr.Label(
                 label='Aspect Ratio Distribution',
-                elem_classes='analysis_panel'
+                elem_classes='de_panel'
             )
 
         dataset_timestamp.change(

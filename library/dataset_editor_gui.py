@@ -28,7 +28,6 @@ def gradio_dataset_editor_gui_tab(headless=False):
         with gr.Row():
             dataset_dir = gr.Textbox(
                 label='Dataset directory',
-                placeholder='Directory containing the images to caption',
                 interactive=True,
             )
             folder_button = gr.Button(
@@ -38,14 +37,13 @@ def gradio_dataset_editor_gui_tab(headless=False):
             load_button = gr.Button('Load/Refresh 🔃', elem_classes='load_button')
             caption_ext = gr.Textbox(
                 label='Caption file extension',
-                placeholder='Extension for caption file. eg: .txt, .caption',
                 value='.txt',
                 interactive=True,
             )
             save_button = gr.Button('Save 💾', elem_classes='save_button')
 
         # Results
-        with gr.Row():
+        with gr.Row(visible=False) as results_row:
             with gr.Tab('Images'):
                 DatasetEditorImagesWidget(dataset, dataset_timestamp)
 
@@ -59,13 +57,13 @@ def gradio_dataset_editor_gui_tab(headless=False):
     )
 
     load_button.click(
-        load,
-        [dataset_dir, caption_ext],
-        dataset_timestamp
+        fn=load,
+        inputs=[dataset_dir, caption_ext],
+        outputs=[dataset_timestamp, results_row]
     )
 
 
-def load(dataset_dir, caption_ext) -> str:
+def load(dataset_dir, caption_ext):
     dataset.clear()
 
     try:
@@ -73,4 +71,7 @@ def load(dataset_dir, caption_ext) -> str:
     except Exception as e:
         msgbox(e.args[0])
 
-    return str(time.time())
+    return [
+        str(time.time()),
+        gr.Row.update(visible=True)
+    ]
