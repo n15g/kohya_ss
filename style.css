@@ -42,3 +42,13 @@
 .de_panel.de_tags_distribution {
     overflow-x: hidden !important;
 }
+
+.de_panel.de_file_list span.textspan {
+    display: block;
+    margin: 4px;
+    background: lightgrey;
+}
+
+.small_button {
+    min-width: 64px !important;
+}

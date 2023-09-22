@@ -16,7 +16,8 @@ class DatasetEntry:
     Entry in the dataset. Includes the training image and any caption data/tags located
     alongside.
     """
-    name: str
+    key: str
+    instance_path: str
     filename: str
     hash: str
     width: int
@@ -28,9 +29,9 @@ class DatasetEntry:
     original_tags: list[str]
     tags: list[str]
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, key: str) -> None:
         super().__init__()
-        self.name = name
+        self.key = key
         self.original_tags = list()
         self.tags = list()
 
@@ -43,6 +44,7 @@ class DatasetEntry:
             image_path: Path to the image file.
             caption_ext: Extension for caption data.
         """
+        self.instance_path = os.path.dirname(self.key)
         self.image_dir = os.path.dirname(image_path)
         self.filename = os.path.splitext(os.path.basename(image_path))[0]
         self.image_path = image_path
@@ -115,7 +117,7 @@ class Dataset:
             for file in files:
                 if file.lower().endswith(IMAGE_EXTENSIONS):
                     entry = self._load_entry(os.path.join(root, file))
-                    self.entries[entry.name] = entry
+                    self.entries[entry.key] = entry
         self.size = len(self.entries)
         self._update_tags()
 
@@ -154,6 +156,19 @@ class Dataset:
         for entry in self.entries.values():
             entry.rename_tag(old, new)
         self._update_tags()
+
+    def get_entries_with_tag(self, tag: str) -> list[DatasetEntry]:
+        """
+        Get a list of entries that contain the given tag.
+        Args:
+            tag: The tag to search for.
+
+        Returns:
+            List of entry objects
+        """
+        return list(filter(
+            lambda x: tag in x.tags, self.entries.values()
+        ))
 
     def _load_entry(self, image_path: str) -> DatasetEntry:
         name = os.path.relpath(image_path, self.dataset_dir)

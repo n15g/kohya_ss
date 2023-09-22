@@ -34,13 +34,13 @@ def gradio_dataset_editor_gui_tab(headless=False):
                 '📂', elem_id='open_folder_small', visible=(not headless)
             )
 
-            load_button = gr.Button('Load/Refresh 🔃', elem_classes='load_button')
+            load_button = gr.Button('Load/Refresh 🔃')
             caption_ext = gr.Textbox(
                 label='Caption file extension',
                 value='.txt',
                 interactive=True,
             )
-            save_button = gr.Button('Save 💾', elem_classes='save_button')
+            save_button = gr.Button('Save 💾')
 
         # Results
         with gr.Row(visible=False) as results_row:
