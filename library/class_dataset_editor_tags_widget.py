@@ -1,3 +1,4 @@
+import re
 import time
 
 import gradio as gr
@@ -10,6 +11,7 @@ class DatasetEditorTagsWidget:
     dataset_timestamp: gr.Text
 
     selected_tag: gr.Text
+    filter_text: gr.Text
     tag_distribution_graph: gr.Label
 
     def __init__(
@@ -20,13 +22,16 @@ class DatasetEditorTagsWidget:
         self.dataset = dataset
         self.dataset_timestamp = dataset_timestamp
 
+        self.selected_tag = gr.Text(visible=False)
+
         with gr.Row():
-            self.selected_tag = gr.Text(visible=False)
-            self.tag_distribution_graph = gr.Label(
-                label='Tag Distribution',
-                scale=2,
-                elem_classes=["de_panel", "de_tags_distribution"]
-            )
+            with gr.Column():
+                self.filter_text = gr.Text(label='Filter', placeholder='Filter (regex)')
+                self.tag_distribution_graph = gr.Label(
+                    label='Tag Distribution',
+                    scale=2,
+                    elem_classes=['de_panel', 'de_tags_distribution']
+                )
 
             self.selected_tag_widget = DatasetEditorSelectedTagWidget(
                 self.dataset,
@@ -34,16 +39,29 @@ class DatasetEditorTagsWidget:
                 self.selected_tag
             )
 
-        self.dataset_timestamp.change(fn=self._update_tag_distribution, outputs=self.tag_distribution_graph)
-        self.tag_distribution_graph.select(fn=self._on_select_tag, outputs=self.selected_tag)
+        self.dataset_timestamp.change(
+            fn=self._update_tag_distribution,
+            inputs=self.filter_text,
+            outputs=self.tag_distribution_graph
+        )
+        self.tag_distribution_graph.select(
+            fn=self._on_select_tag,
+            outputs=self.selected_tag
+        )
+        self.filter_text.change(
+            fn=self._update_tag_distribution,
+            inputs=self.filter_text,
+            outputs=self.tag_distribution_graph
+        )
 
-    def _update_tag_distribution(self) -> dict[str, float]:
+    def _update_tag_distribution(self, filter: str) -> dict[str, float]:
         counts: dict[str, int] = dict()
         percents: dict[str, float] = dict()
 
         for entry in self.dataset.entries.values():
             for tag in entry.tags:
-                counts[tag] = counts.get(tag, 0) + 1
+                if re.search(filter, tag) is not None:
+                    counts[tag] = counts.get(tag, 0) + 1
 
         for k, v in counts.items():
             percents[k] = v / self.dataset.size
