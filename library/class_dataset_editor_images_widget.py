@@ -8,7 +8,6 @@ class DatasetEditorImagesWidget:
     dataset_timestamp: gr.Text
     selected_tag: gr.Text
 
-    block: gr.Column
     size_distribution_graph: gr.Label()
     aspect_ratio_distribution_graph: gr.Label()
     tag_distribution_graph: gr.Label()

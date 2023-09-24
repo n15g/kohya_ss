@@ -79,7 +79,7 @@ class DatasetEntry:
             # no-op. Tag doesn't exist, nothing to do
             pass
 
-    def rename_tag(self, old, new):
+    def rename_tag(self, old, new) -> None:
         """
         Rename a tag in this entry's captions.
         Args:
@@ -87,6 +87,18 @@ class DatasetEntry:
             new: New value
         """
         self.tags = list(map(lambda e: e.replace(old, new), self.tags))
+
+    def remove_duplicate_tags(self) -> None:
+        """
+        Remove duplicate tags from the caption.
+        Duplicates are removed from the end of the caption first.
+        """
+        new_tags = list()
+
+        for tag in self.tags:
+            if tag not in new_tags:
+                new_tags.append(tag)
+        self.tags = new_tags
 
 
 class Dataset:
@@ -170,13 +182,22 @@ class Dataset:
             lambda x: tag in x.tags, self.entries.values()
         ))
 
+    def remove_duplicate_tags(self) -> None:
+        """
+        Remove all duplicate tags from the dataset.
+        Duplicates are removed from the end of the caption first.
+        """
+        for entry in self.entries.values():
+            entry.remove_duplicate_tags()
+        self._update_tags()
+
     def _load_entry(self, image_path: str) -> DatasetEntry:
         name = os.path.relpath(image_path, self.dataset_dir)
         entry = DatasetEntry(name)
         entry.load(image_path, self.caption_ext)
         return entry
 
-    def _update_tags(self):
+    def _update_tags(self) -> None:
         self.tags = set()
         for entry in self.entries.values():
             self.tags.update(entry.tags)

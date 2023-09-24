@@ -5,6 +5,7 @@ from easygui import msgbox
 
 from library.custom_logging import setup_logging
 from .class_dataset import Dataset
+from .class_dataset_editor_duplicates_widget import DatasetEditorDuplicatesWidget
 from .class_dataset_editor_images_widget import DatasetEditorImagesWidget
 from .class_dataset_editor_tags_widget import DatasetEditorTagsWidget
 from .common_gui import get_folder_path
@@ -44,11 +45,14 @@ def gradio_dataset_editor_gui_tab(headless=False):
 
         # Results
         with gr.Row(visible=False) as results_row:
-            with gr.Tab('Images'):
-                DatasetEditorImagesWidget(dataset, dataset_timestamp)
-
             with gr.Tab('Tags'):
                 DatasetEditorTagsWidget(dataset, dataset_timestamp)
+
+            with gr.Tab('Duplicates'):
+                DatasetEditorDuplicatesWidget(dataset, dataset_timestamp)
+
+            with gr.Tab('Images'):
+                DatasetEditorImagesWidget(dataset, dataset_timestamp)
 
     folder_button.click(
         get_folder_path,
