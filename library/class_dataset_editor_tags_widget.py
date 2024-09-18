@@ -12,6 +12,8 @@ class DatasetEditorTagsWidget:
 
     selected_tag: gr.Text
     filter_text: gr.Text
+    trim_amount: gr.Text
+    trim_button: gr.Button
     tag_distribution_graph: gr.Label
 
     def __init__(
@@ -27,6 +29,9 @@ class DatasetEditorTagsWidget:
         with gr.Row():
             with gr.Column():
                 self.filter_text = gr.Text(label='Filter', placeholder='Filter (regex)')
+                with gr.Row():
+                    self.trim_amount = gr.Text(label='Trim >', placeholder='Remove tags with > x%', value="60")
+                    self.trim_button = gr.Button(value='Trim', size='sm')
                 self.tag_distribution_graph = gr.Label(
                     label='Tag Distribution',
                     scale=2,
@@ -54,22 +59,50 @@ class DatasetEditorTagsWidget:
             outputs=self.tag_distribution_graph
         )
 
-    def _update_tag_distribution(self, filter: str) -> dict[str, float]:
+        self.trim_button.click(
+            fn=self._on_trim,
+            inputs=[
+                self.trim_amount,
+                self.filter_text
+            ],
+            outputs=[self.dataset_timestamp]
+        )
+
+    def _get_percents(self, flt: str) -> dict[str, float]:
         counts: dict[str, int] = dict()
         percents: dict[str, float] = dict()
 
         for entry in self.dataset.entries.values():
             for tag in entry.tags:
-                if re.search(filter, tag) is not None:
+                if re.search(flt, tag) is not None:
                     counts[tag] = counts.get(tag, 0) + 1
 
         for k, v in counts.items():
             percents[k] = v / self.dataset.size
 
+        return percents
+
+    def _update_tag_distribution(self, flt: str) -> dict[str, float]:
+        percents = self._get_percents(flt)
+
         return gr.Label.update(value=percents)
 
     def _on_select_tag(self, event: gr.SelectData) -> gr.Text.update:
         return gr.Text.update(value=event.value)
+
+    def _on_trim(self, trim_amount: str, flt: str):
+        percents = self._get_percents(flt)
+
+        skip = 1
+        skipped = 0
+        for k, v in percents.items():
+            if skipped < skip:
+                skipped += 1
+                continue
+
+            if v >= float(trim_amount) / 100:
+                self.dataset.delete_tag(k)
+        return str(time.time())
 
 
 class DatasetEditorSelectedTagWidget:
