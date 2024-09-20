@@ -19,10 +19,12 @@ class DatasetEntry:
     key: str
     instance_path: str
     filename: str
+    extension: str
     hash: str
     width: int
     height: int
     aspect_ratio: str
+    area: int
     image_dir: str
     image_path: str
     caption_path: str
@@ -47,6 +49,7 @@ class DatasetEntry:
         self.instance_path = os.path.dirname(self.key)
         self.image_dir = os.path.dirname(image_path)
         self.filename = os.path.splitext(os.path.basename(image_path))[0]
+        self.extension = os.path.splitext(os.path.basename(image_path))[1]
         self.image_path = image_path
         self.caption_path = os.path.join(self.image_dir, self.filename) + caption_ext
 
@@ -56,8 +59,10 @@ class DatasetEntry:
             with Image.open(image_path) as img:
                 self.width, self.height = img.size
 
-            x, y = calculate_aspect_ratio(self.width, self.height)
-            self.aspect_ratio = f"{x}:{y}"
+                self.area = self.width * self.height
+
+                x, y = calculate_aspect_ratio(self.width, self.height)
+                self.aspect_ratio = f"{x}:{y}"
 
         if os.path.exists(self.caption_path):
             with open(self.caption_path, 'r', encoding='utf8') as f:
