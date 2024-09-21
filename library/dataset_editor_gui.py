@@ -8,6 +8,7 @@ from .class_dataset import Dataset
 from .class_dataset_editor_duplicates_widget import DatasetEditorDuplicatesWidget
 from .class_dataset_editor_images_widget import DatasetEditorImagesWidget
 from .class_dataset_editor_tags_widget import DatasetEditorTagsWidget
+from .class_dataset_editor_utils_widget import DatasetEditorUtilsWidget
 from .common_gui import get_folder_path
 
 # Set up logging
@@ -53,6 +54,9 @@ def gradio_dataset_editor_gui_tab(headless=False):
 
             with gr.Tab('Images'):
                 DatasetEditorImagesWidget(dataset, dataset_timestamp)
+
+            with gr.Tab('Utils'):
+                DatasetEditorUtilsWidget(dataset, dataset_timestamp)
 
     folder_button.click(
         get_folder_path,

@@ -55,7 +55,7 @@ class DatasetEntry:
 
         if os.path.exists(self.image_path):
             with open(self.image_path, "rb") as f:
-                self.hash = hashlib.sha256(f.read()).hexdigest()
+                self.hash = hashlib.md5(f.read()).hexdigest()
             with Image.open(image_path) as img:
                 self.width, self.height = img.size
 
@@ -137,6 +137,9 @@ class Dataset:
                     self.entries[entry.key] = entry
         self.size = len(self.entries)
         self._update_tags()
+
+    def reload(self) -> None:
+        self.load(self.dataset_dir, self.caption_ext)
 
     def save(self):
         """
